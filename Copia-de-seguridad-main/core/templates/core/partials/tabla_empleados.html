@@ -1,0 +1,16 @@
+<table class="table table-striped table-bordered align-middle">
+    <thead class="table-dark">
+        <tr>
+            <th>Nombre de usuario</th>
+            <th>Credencial</th>
+            <th>Acciones</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for empleado in empleados %}
+            {% include 'core/partials/despachante_row.html' with despachante=empleado %}
+        {% empty %}
+            <tr><td colspan="3" class="text-center">No hay empleados registrados.</td></tr>
+        {% endfor %}
+    </tbody>
+</table>

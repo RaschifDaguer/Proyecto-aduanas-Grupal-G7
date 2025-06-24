@@ -1,0 +1,8 @@
+<tr id="despachante-row-{{ despachante.id }}">
+    <td>{{ despachante.username }}</td>
+    <td>{{ despachante.credencial }}</td>
+    <td>
+        <button class="btn btn-sm btn-primary edit-despachante" data-id="{{ despachante.id }}">Editar</button>
+        <button class="btn btn-sm btn-danger delete-despachante" data-id="{{ despachante.id }}">Eliminar</button>
+    </td>
+</tr>

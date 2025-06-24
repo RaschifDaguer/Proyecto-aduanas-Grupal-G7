@@ -1,0 +1,162 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block content %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+<h2 class="mb-4">Gestión de Despachantes</h2>
+<div class="mb-3">
+    <button class="btn btn-success" id="add-despachante-btn">Agregar Despachante</button>
+</div>
+<table class="table table-striped table-bordered align-middle" id="despachantes-table">
+    <thead class="table-dark">
+        <tr>
+            <th>Nombre de usuario</th>
+            <th>Credencial</th>
+            <th>Acciones</th>
+        </tr>
+    </thead>
+    <tbody id="despachantes-tbody">
+        {% for despachante in despachantes %}
+            {% include 'core/partials/despachante_row.html' with despachante=despachante %}
+        {% empty %}
+            <tr><td colspan="3" class="text-center">No hay despachantes registrados.</td></tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<!-- Modal para Crear Despachante -->
+<div class="modal fade" id="despachanteModal" tabindex="-1" aria-labelledby="despachanteModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="despachanteModalLabel">Agregar Despachante</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+      </div>
+      <form id="despachante-form">
+        <div class="modal-body">
+            {% csrf_token %}
+            <div id="despachante-form-fields">
+                {{ form.username.label_tag }} {{ form.username }}
+                {{ form.credencial.label_tag }} {{ form.credencial }}
+            </div>
+            <input type="hidden" name="role" value="despachante">
+            <div class="alert alert-danger d-none" id="despachante-form-errors"></div>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+            <button type="submit" class="btn btn-primary" id="save-despachante-btn">Guardar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+const despachanteModalEl = document.getElementById('despachanteModal');
+const despachanteModal = new bootstrap.Modal(despachanteModalEl);
+
+// Abrir modal para crear
+$('#add-despachante-btn').on('click', function() {
+    $('#despachanteModalLabel').text('Agregar Despachante');
+    $('#despachante-form')[0].reset();
+    $('input[name="role"]', '#despachante-form').val('despachante');
+    $('#despachante-form-errors').addClass('d-none').empty();
+    $('#despachante-form-fields').html(`
+        {{ form.username.label_tag }} {{ form.username }}
+        {{ form.credencial.label_tag }} {{ form.credencial }}
+    `);
+    despachanteModal.show();
+});
+
+// Guardar (crear)
+$('#despachante-form').on('submit', function(e) {
+    e.preventDefault();
+    let url = '{% url "despachante_create" %}';
+    let formData = $(this).serialize();
+    $.post(url, formData)
+        .done(function(response) {
+            if (response.success) {
+                $('#despachantes-tbody').append(response.html);
+                despachanteModal.hide();
+                showMessage(response.message || 'Operación exitosa', 'success');
+            } else {
+                $('#despachante-form-errors').removeClass('d-none').html(response.errors.join('<br>'));
+                showMessage('Error: ' + response.errors.join(' | '), 'danger');
+            }
+        })
+        .fail(function(xhr) {
+            $('#despachante-form-errors').removeClass('d-none').text('Error inesperado. Intenta nuevamente.');
+            showMessage('Error inesperado. Intenta nuevamente.', 'danger');
+        })
+        .always(function() {
+            setTimeout(function() {
+                $('.modal-backdrop').remove();
+                $('body').removeClass('modal-open');
+            }, 500);
+        });
+});
+
+function showMessage(msg, type) {
+    let alert = $(`<div class="alert alert-${type} alert-dismissible fade show mt-3" role="alert">${msg}<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button></div>`);
+    $('.container').prepend(alert);
+    setTimeout(() => { alert.alert('close'); }, 4000);
+}
+
+// Eliminar despachante
+$('#despachantes-tbody').on('click', '.delete-despachante', function() {
+    const despachanteId = $(this).data('id');
+    if (confirm('¿Seguro que deseas eliminar este despachante?')) {
+        $.post(`/despachantes/${despachanteId}/delete/`, {'csrfmiddlewaretoken': $('input[name="csrfmiddlewaretoken"]').val()}, function(response) {
+            if (response.success) {
+                $(`#despachante-row-${despachanteId}`).remove();
+                showMessage('Despachante eliminado exitosamente.', 'success');
+            } else {
+                showMessage('Error al eliminar despachante.', 'danger');
+            }
+        }).fail(function() {
+            showMessage('Error inesperado. Intenta nuevamente.', 'danger');
+        });
+    }
+});
+
+// Editar despachante
+$('#despachantes-tbody').on('click', '.edit-despachante', function() {
+    const despachanteId = $(this).data('id');
+    $('#despachanteModalLabel').text('Editar Despachante');
+    $('#despachante-form-errors').addClass('d-none').empty();
+    // Obtener datos del despachante y llenar el formulario
+    $.get(`/despachantes/${despachanteId}/form/`, function(response) {
+        $('#despachante-form-fields').html(response.html);
+        // Cambiar la URL de guardado para edición
+        $('#despachante-form').off('submit').on('submit', function(e) {
+            e.preventDefault();
+            let url = `/despachantes/${despachanteId}/edit/`;
+            let formData = $(this).serialize();
+            $.post(url, formData)
+                .done(function(response) {
+                    if (response.success) {
+                        $(`#despachante-row-${despachanteId}`).replaceWith(response.html);
+                        despachanteModal.hide();
+                        showMessage(response.message || 'Operación exitosa', 'success');
+                    } else {
+                        $('#despachante-form-errors').removeClass('d-none').html(response.errors.join('<br>'));
+                        showMessage('Error: ' + response.errors.join(' | '), 'danger');
+                    }
+                })
+                .fail(function(xhr) {
+                    $('#despachante-form-errors').removeClass('d-none').text('Error inesperado. Intenta nuevamente.');
+                    showMessage('Error inesperado. Intenta nuevamente.', 'danger');
+                })
+                .always(function() {
+                    setTimeout(function() {
+                        $('.modal-backdrop').remove();
+                        $('body').removeClass('modal-open');
+                    }, 500);
+                });
+        });
+        despachanteModal.show();
+    });
+});
+</script>
+{% endblock %}

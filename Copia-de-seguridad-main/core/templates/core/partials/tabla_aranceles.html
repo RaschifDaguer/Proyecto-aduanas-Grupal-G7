@@ -1,0 +1,25 @@
+<table class="table table-striped table-bordered align-middle">
+    <thead class="table-dark">
+        <tr>
+            <th>Código</th>
+            <th>Capítulo</th>
+            <th>Partida</th>
+            <th>Subpartida</th>
+            <th>Subpartida Nacional</th>
+            <th>Desagregación Nacional</th>
+            <th>Descripción</th>
+            <th>GA %</th>
+            <th>ICE %</th>
+            <th>Unidad de Medida</th>
+            <th>Despacho en Frontera</th>
+            <th>Acciones</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for arancel in aranceles %}
+            {% include 'core/partials/arancel_row.html' with arancel=arancel %}
+        {% empty %}
+            <tr><td colspan="12" class="text-center">No hay aranceles registrados.</td></tr>
+        {% endfor %}
+    </tbody>
+</table>

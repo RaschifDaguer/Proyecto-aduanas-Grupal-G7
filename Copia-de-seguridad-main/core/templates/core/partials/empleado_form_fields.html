@@ -1,0 +1,7 @@
+<form id="empleado-form">
+    {% csrf_token %}
+    {{ form.username.label_tag }} {{ form.username }}
+    {{ form.credencial.label_tag }} {{ form.credencial }}
+    <input type="hidden" name="role" value="despachante">
+    <div class="alert alert-danger d-none" id="empleado-form-errors"></div>
+</form>

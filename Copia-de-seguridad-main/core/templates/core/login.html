@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="d-flex justify-content-center align-items-center" style="min-height: 80vh; background: linear-gradient(135deg, #e3e6f3 60%, #f4f8fb 100%);">
+  <div class="card shadow-lg p-5 border-0 animate__animated animate__fadeIn" style="min-width:370px;max-width:420px;width:100%;background: #fff; border-radius:1.5rem;">
+    <div class="text-center mb-4">
+      <div style="background:#fff; border-radius:1.2rem; box-shadow:0 4px 24px rgba(26,35,126,0.15); padding:10px; display:inline-block;">
+        <img src="/media/logo-sisarm.webp" alt="Logo SisArm" width="110" height="110" style="object-fit:contain; display:block; background:transparent; border-radius:1rem;">
+      </div>
+    </div>
+    <h2 class="mb-4 text-center" style="font-family: 'Montserrat', Arial, sans-serif; color: #1a237e; letter-spacing: 1px; font-weight:700;">Iniciar Sesión</h2>
+    <form method="post" autocomplete="off">
+      {% csrf_token %}
+      <div class="mb-3">
+        <label class="form-label">Nombre de usuario</label>
+        <input type="text" name="username" maxlength="150" class="form-control form-control-lg" required id="id_username" value="{{ form.username.value|default:'' }}">
+      </div>
+      <div class="mb-3">
+        <label class="form-label">Credencial (6 dígitos)</label>
+        <input type="password" name="credencial" maxlength="6" minlength="6" class="form-control form-control-lg" required id="id_credencial" value="">
+      </div>
+      <button type="submit" class="btn btn-primary w-100 btn-lg" style="background:linear-gradient(90deg,#1a237e 60%,#3949ab 100%);border:none;box-shadow:0 2px 8px rgba(26,35,126,0.10);font-weight:600;">Ingresar</button>
+    </form>
+    {% if error %}<div class="alert alert-danger mt-3">{{ error }}</div>{% endif %}
+  </div>
+</div>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
+{% endblock %}

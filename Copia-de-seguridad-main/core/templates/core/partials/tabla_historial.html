@@ -1,0 +1,20 @@
+<table class="table table-striped table-bordered align-middle">
+    <thead class="table-dark">
+        <tr>
+            <th>Usuario</th>
+            <th>Búsqueda</th>
+            <th>Fecha</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for h in historial %}
+            <tr>
+                <td>{{ h.usuario.username }}</td>
+                <td>{{ h.termino }}</td>
+                <td>{{ h.fecha|date:'d/m/Y H:i' }}</td>
+            </tr>
+        {% empty %}
+            <tr><td colspan="3" class="text-center">No hay historial disponible.</td></tr>
+        {% endfor %}
+    </tbody>
+</table>

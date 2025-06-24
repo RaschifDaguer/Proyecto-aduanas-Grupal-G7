@@ -1,0 +1,351 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container py-4">
+    <div class="card shadow mb-4 animate__animated animate__fadeIn">
+        <div class="card-body">
+            <form method="get" action="{% url 'busqueda_combinada' %}" autocomplete="off" id="busquedaCombinadaForm" class="row g-2 align-items-center position-relative">
+                <div class="col-md-4">
+                    <input type="text" name="codigo" id="busquedaCodigoInput" class="form-control" placeholder="Buscar por código..." value="{{ busqueda_codigo|default:'' }}">
+                </div>
+                <div class="col-md-4">
+                    <input type="text" name="descripcion" id="busquedaDescripcionInput" class="form-control" placeholder="Buscar por descripción..." value="{{ busqueda_descripcion|default:'' }}">
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-primary w-100">Buscar</button>
+                </div>
+                <div class="col-md-2">
+                    <button type="button" class="btn btn-secondary w-100" id="btnLimpiar">Inicio</button>
+                </div>
+            </form>
+            <!-- Sugerencias globales -->
+            <div style="position:relative; z-index:10000;">
+                <div id="autocomplete-codigo" class="autocomplete-suggestions" style="display:none;"></div>
+                <div id="autocomplete-descripcion" class="autocomplete-suggestions" style="display:none;"></div>
+            </div>
+            <div id="form-error" class="alert alert-danger mt-2 d-none"></div>
+        </div>
+    </div>
+    {% if busqueda_mensaje %}
+        <div class="alert alert-danger animate__animated animate__fadeInDown">{{ busqueda_mensaje }}</div>
+    {% endif %}
+    {% if busqueda_codigo or busqueda_descripcion %}
+        {% if aranceles %}
+            {% regroup aranceles by capituloaranc.seccion as secciones_grouped %}
+            {% for seccion_group in secciones_grouped %}
+                <div class="card shadow mb-4">
+                    <div class="card-header bg-info text-white">
+                        <h4 class="mb-0">Sección {{ seccion_group.grouper.titulo }}: {{ seccion_group.grouper.descripcion }}</h4>
+                    </div>
+                    <div class="card-body">
+                        {% regroup seccion_group.list by capituloaranc as capitulos_grouped %}
+                        {% for capitulo_group in capitulos_grouped %}
+                            <div class="card mb-3 border-primary">
+                                <div class="card-header bg-light">
+                                    <h5 class="mb-0">Capítulo {% if capitulo_group.grouper.titulo|length == 1 %}0{{ capitulo_group.grouper.titulo }}{% else %}{{ capitulo_group.grouper.titulo }}{% endif %}: {{ capitulo_group.grouper.descripcion }}</h5>
+                                </div>
+                                <div class="card-body">
+                                    {% if capitulo_group.grouper.nota %}
+                                        <p><strong>Nota:</strong> {{ capitulo_group.grouper.nota_html|safe }}</p>
+                                    {% endif %}
+                                    <div class="table-responsive">
+                                        <table class="table table-striped table-bordered mb-0">
+                                            <thead class="table-dark">
+                                                <tr>
+                                                    <th>Código</th>
+                                                    <th>Descripción del producto</th>
+                                                    <th>GA %</th>
+                                                    <th>ICE-IEHD</th>
+                                                    <th>Unidad de Medida</th>
+                                                    <th>Despacho Frontera</th>
+                                                    <th>Tipo de Doc</th>
+                                                    <th>Entidad que emite</th>
+                                                    <th>Disp. Legal</th>
+                                                    <th>CAN / ACE 36 / ACE 47 / VEN</th>
+                                                    <th>ACE 22 Chi</th>
+                                                    <th>ACE 22 Prot</th>
+                                                    <th>ACE 66, MÉXICO</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {% for arancel in capitulo_group.list %}
+                                                <tr>
+                                                    <td>{% if not arancel.arancel_padre %}{{ arancel.codigo_resaltado|default_if_none:""|default:""|safe }}{% endif %}</td>
+                                                    <td>{{ arancel.descripcion_resaltada|default_if_none:""|default:""|safe }}</td>
+                                                    <td>{% if arancel.ga %}{{ arancel.ga|floatformat:0 }}{% endif %}</td>
+                                                    <td>{{ arancel.ice|default_if_none:""|default:"" }}</td>
+                                                    <td>{{ arancel.unidad_medida|default_if_none:""|default:"" }}</td>
+                                                    <td>{{ arancel.despacho_frontera|default_if_none:""|default:"" }}</td>
+                                                    <td>{% if arancel.documentos_adicionales %}{{ arancel.documentos_adicionales.tipo_doc|default_if_none:""|default:"" }}{% endif %}</td>
+                                                    <td>{% if arancel.documentos_adicionales %}{{ arancel.documentos_adicionales.entidad_emite|default_if_none:""|default:"" }}{% endif %}</td>
+                                                    <td>{% if arancel.documentos_adicionales %}{{ arancel.documentos_adicionales.disp_legal|default_if_none:""|default:"" }}{% endif %}</td>
+                                                    <td>
+                                                        {% if arancel.preferencias_arancelarias %}
+                                                            {% if arancel.preferencias_arancelarias.ace_36 %}{{ arancel.preferencias_arancelarias.ace_36 }}
+                                                            {% elif arancel.preferencias_arancelarias.can %}{{ arancel.preferencias_arancelarias.can }}
+                                                            {% elif arancel.preferencias_arancelarias.ace_47 %}{{ arancel.preferencias_arancelarias.ace_47 }}
+                                                            {% elif arancel.preferencias_arancelarias.ven %}{{ arancel.preferencias_arancelarias.ven }}
+                                                            {% endif %}
+                                                        {% endif %}
+                                                    </td>
+                                                    <td>{% if arancel.ace22 %}{{ arancel.ace22.chi|default_if_none:"" }}{% endif %}</td>
+                                                    <td>{% if arancel.ace22 %}{{ arancel.ace22.prot|default_if_none:"" }}{% endif %}</td>
+                                                    <td>{% if arancel.ace66_mexico %}{{ arancel.ace66_mexico.ace_66_mexico|default_if_none:"" }}{% endif %}</td>
+                                                </tr>
+                                                {% endfor %}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            {% endfor %}
+        {% else %}
+            <div class="alert alert-warning">No se encontraron resultados para tu búsqueda.</div>
+        {% endif %}
+    {% else %}
+        {% for seccion in secciones %}
+        <div class="card shadow mb-4">
+            <div class="card-header bg-info text-white">
+                <h4 class="mb-0">Sección {{ seccion.titulo }}: {{ seccion.descripcion }}</h4>
+            </div>
+            <div class="card-body">
+                {% if seccion.notas %}
+                    <p><strong>Notas:</strong> {{ seccion.notas_html|safe }}</p>
+                {% endif %}
+                {% if seccion.notas_complementarias_nandina %}
+                    <p><strong>Notas Complementarias NANDINA:</strong> {{ seccion.notas_nandina_html|safe }}</p>
+                {% endif %}
+                {% for capitulo in capitulos %}
+                    {% if capitulo.seccion_id == seccion.id %}
+                        <div class="card mb-3 border-primary">
+                            <div class="card-header bg-light">
+                                <h5 class="mb-0">Capítulo {% if capitulo.titulo|length == 1 %}0{{ capitulo.titulo }}{% else %}{{ capitulo.titulo }}{% endif %}: {{ capitulo.descripcion }}</h5>
+                            </div>
+                            <div class="card-body">
+                                {% if capitulo.nota %}
+                                    <p><strong>Nota:</strong> {{ capitulo.nota_html|safe }}</p>
+                                {% endif %}
+                                <div class="table-responsive">
+                                    <table class="table table-bordered table-sm">
+                                        <thead class="table-secondary">
+                                            <tr>
+                                                <th>Código</th>
+                                                <th>Descripción del producto</th>
+                                                <th>GA %</th>
+                                                <th>ICE-IEHD</th>
+                                                <th>Unidad de Medida</th>
+                                                <th>Despacho Frontera</th>
+                                                <th>Tipo de Doc</th>
+                                                <th>Entidad que emite</th>
+                                                <th>Disp. Legal</th>
+                                                <th>CAN / ACE 36 / ACE 47 / VEN</th>
+                                                <th>ACE 22 Chi</th>
+                                                <th>ACE 22 Prot</th>
+                                                <th>ACE 66, MÉXICO</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for arancel in aranceles %}
+                                                {% if arancel.capituloaranc.id == capitulo.id and not arancel.arancel_padre %}
+                                                <tr>
+                                                    <td>{{ arancel.codigo|default_if_none:""|default:"" }}</td>
+                                                    <td>{{ arancel.descripcion|default_if_none:""|default:"" }}</td>
+                                                    <td>{% if arancel.ga %}{{ arancel.ga|floatformat:0 }}{% endif %}</td>
+                                                    <td>{{ arancel.ice|default_if_none:""|default:"" }}</td>
+                                                    <td>{{ arancel.unidad_medida|default_if_none:""|default:"" }}</td>
+                                                    <td>{{ arancel.despacho_frontera|default_if_none:""|default:"" }}</td>
+                                                    <td>{% if arancel.documentos_adicionales %}{{ arancel.documentos_adicionales.tipo_doc|default_if_none:""|default:"" }}{% endif %}</td>
+                                                    <td>{% if arancel.documentos_adicionales %}{{ arancel.documentos_adicionales.entidad_emite|default_if_none:""|default:"" }}{% endif %}</td>
+                                                    <td>{% if arancel.documentos_adicionales %}{{ arancel.documentos_adicionales.disp_legal|default_if_none:""|default:"" }}{% endif %}</td>
+                                                    <td>
+                                                        {% if arancel.preferencias_arancelarias %}
+                                                            {% if arancel.preferencias_arancelarias.ace_36 %}{{ arancel.preferencias_arancelarias.ace_36 }}
+                                                            {% elif arancel.preferencias_arancelarias.can %}{{ arancel.preferencias_arancelarias.can }}
+                                                            {% elif arancel.preferencias_arancelarias.ace_47 %}{{ arancel.preferencias_arancelarias.ace_47 }}
+                                                            {% elif arancel.preferencias_arancelarias.ven %}{{ arancel.preferencias_arancelarias.ven }}
+                                                            {% endif %}
+                                                        {% endif %}
+                                                    </td>
+                                                    <td>{% if arancel.ace22 %}{{ arancel.ace22.chi|default_if_none:"" }}{% endif %}</td>
+                                                    <td>{% if arancel.ace22 %}{{ arancel.ace22.prot|default_if_none:"" }}{% endif %}</td>
+                                                    <td>{% if arancel.ace66_mexico %}{{ arancel.ace66_mexico.ace_66_mexico|default_if_none:"" }}{% endif %}</td>
+                                                </tr>
+                                                {% for hijo in arancel.aranceles_hijos.all %}
+                                                <tr>
+                                                    <td></td>
+                                                    <td>{{ hijo.descripcion|default_if_none:""|default:"" }}</td>
+                                                    <td>{% if hijo.ga %}{{ hijo.ga|floatformat:0 }}{% endif %}</td>
+                                                    <td>{{ hijo.ice|default_if_none:""|default:"" }}</td>
+                                                    <td>{{ hijo.unidad_medida|default_if_none:""|default:"" }}</td>
+                                                    <td>{{ hijo.despacho_frontera|default_if_none:""|default:"" }}</td>
+                                                    <td>{% if hijo.documentos_adicionales %}{{ hijo.documentos_adicionales.tipo_doc|default_if_none:""|default:"" }}{% endif %}</td>
+                                                    <td>{% if hijo.documentos_adicionales %}{{ hijo.documentos_adicionales.entidad_emite|default_if_none:""|default:"" }}{% endif %}</td>
+                                                    <td>{% if hijo.documentos_adicionales %}{{ hijo.documentos_adicionales.disp_legal|default_if_none:""|default:"" }}{% endif %}</td>
+                                                    <td>
+                                                        {% if hijo.preferencias_arancelarias %}
+                                                            {% if hijo.preferencias_arancelarias.ace_36 %}{{ hijo.preferencias_arancelarias.ace_36 }}
+                                                            {% elif hijo.preferencias_arancelarias.can %}{{ hijo.preferencias_arancelarias.can }}
+                                                            {% elif hijo.preferencias_arancelarias.ace_47 %}{{ hijo.preferencias_arancelarias.ace_47 }}
+                                                            {% elif hijo.preferencias_arancelarias.ven %}{{ hijo.preferencias_arancelarias.ven }}
+                                                            {% endif %}
+                                                        {% endif %}
+                                                    </td>
+                                                    <td>{% if hijo.ace22 %}{{ hijo.ace22.chi|default_if_none:"" }}{% endif %}</td>
+                                                    <td>{% if hijo.ace22 %}{{ hijo.ace22.prot|default_if_none:"" }}{% endif %}</td>
+                                                    <td>{% if hijo.ace66_mexico %}{{ hijo.ace66_mexico.ace_66_mexico|default_if_none:"" }}{% endif %}</td>
+                                                </tr>
+                                                {% endfor %}
+                                                {% endif %}
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    {% endif %}
+                {% endfor %}
+            </div>
+        </div>
+        {% endfor %}
+    {% endif %}
+</div>
+<link rel="stylesheet" href="/static/core/css/custom.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+// Detecta la base de la URL para autocompletar
+function getBaseUrl() {
+    return window.location.pathname.includes('/core/') ? '/core' : '';
+}
+// Autocompletado para código
+const inputCodigo = document.getElementById('busquedaCodigoInput');
+const listCodigo = document.getElementById('autocomplete-codigo');
+let timeoutCodigo = null;
+inputCodigo.addEventListener('input', function() {
+    clearTimeout(timeoutCodigo);
+    const term = this.value;
+    if (term.length < 2) {
+        listCodigo.innerHTML = '';
+        listCodigo.style.display = 'none';
+        return;
+    }
+    timeoutCodigo = setTimeout(() => {
+        fetch(`${getBaseUrl()}/autocompletar-codigo/?term=${encodeURIComponent(term)}`)
+            .then(response => response.json())
+            .then(data => {
+                listCodigo.innerHTML = '';
+                if (data.length > 0) {
+                    data.forEach(item => {
+                        const div = document.createElement('div');
+                        div.className = 'autocomplete-suggestion list-group-item list-group-item-action';
+                        let codigoHtml = item.codigo ? item.codigo.replace(new RegExp(term, 'gi'), match => `<mark>${match}</mark>`) : '';
+                        let descHtml = item.descripcion ? item.descripcion.replace(new RegExp(term, 'gi'), match => `<mark>${match}</mark>`) : '';
+                        div.innerHTML = `<b>${codigoHtml}</b> - ${descHtml}`;
+                        if (item.ga || item.ice || item.unidad_medida || item.despacho_frontera) {
+                            div.innerHTML += `<br><small>GA: ${item.ga} | ICE: ${item.ice} | UM: ${item.unidad_medida} | Frontera: ${item.despacho_frontera}</small>`;
+                        }
+                        div.style.cursor = 'pointer';
+                        div.onclick = () => {
+                            if (item.codigo) inputCodigo.value = item.codigo;
+                            else inputCodigo.value = '';
+                            listCodigo.innerHTML = '';
+                            listCodigo.style.display = 'none';
+                            if (item.codigo) document.getElementById('busquedaCombinadaForm').submit();
+                        };
+                        listCodigo.appendChild(div);
+                    });
+                    listCodigo.style.display = 'block';
+                } else {
+                    const div = document.createElement('div');
+                    div.className = 'autocomplete-suggestion list-group-item list-group-item-warning';
+                    div.textContent = 'No hay sugerencias.';
+                    listCodigo.appendChild(div);
+                    listCodigo.style.display = 'block';
+                }
+            });
+    }, 200);
+});
+document.addEventListener('click', function(e) {
+    if (!inputCodigo.contains(e.target) && !listCodigo.contains(e.target)) {
+        listCodigo.innerHTML = '';
+        listCodigo.style.display = 'none';
+    }
+});
+// Autocompletado para descripción
+const inputDesc = document.getElementById('busquedaDescripcionInput');
+const listDesc = document.getElementById('autocomplete-descripcion');
+let timeoutDesc = null;
+inputDesc.addEventListener('input', function() {
+    clearTimeout(timeoutDesc);
+    const term = this.value;
+    if (term.length < 2) {
+        listDesc.innerHTML = '';
+        listDesc.style.display = 'none';
+        return;
+    }
+    timeoutDesc = setTimeout(() => {
+        fetch(`${getBaseUrl()}/autocompletar-descripcion/?term=${encodeURIComponent(term)}`)
+            .then(response => response.json())
+            .then((data) => {
+                listDesc.innerHTML = '';
+                if (data.length > 0) {
+                    data.forEach(item => {
+                        const div = document.createElement('div');
+                        div.className = 'autocomplete-suggestion list-group-item list-group-item-action';
+                        let codigoHtml = item.codigo ? item.codigo.replace(new RegExp(term, 'gi'), match => `<mark>${match}</mark>`) : '';
+                        let descHtml = item.descripcion ? item.descripcion.replace(new RegExp(term, 'gi'), match => `<mark>${match}</mark>`) : '';
+                        div.innerHTML = `<b>${codigoHtml}</b> - ${descHtml}`;
+                        if (item.ga || item.ice || item.unidad_medida || item.despacho_frontera) {
+                            div.innerHTML += `<br><small>GA: ${item.ga} | ICE: ${item.ice} | UM: ${item.unidad_medida} | Frontera: ${item.despacho_frontera}</small>`;
+                        }
+                        div.style.cursor = 'pointer';
+                        div.onclick = () => {
+                            if (item.descripcion && item.descripcion !== 'No hay coincidencias') inputDesc.value = item.descripcion;
+                            else inputDesc.value = '';
+                            listDesc.innerHTML = '';
+                            listDesc.style.display = 'none';
+                            if (item.descripcion && item.descripcion !== 'No hay coincidencias') document.getElementById('busquedaCombinadaForm').submit();
+                        };
+                        listDesc.appendChild(div);
+                    });
+                    listDesc.style.display = 'block';
+                } else {
+                    const div = document.createElement('div');
+                    div.className = 'autocomplete-suggestion list-group-item list-group-item-warning';
+                    div.textContent = 'No hay sugerencias.';
+                    listDesc.appendChild(div);
+                    listDesc.style.display = 'block';
+                }
+            });
+    }, 200);
+});
+document.addEventListener('click', function(e) {
+    if (!inputDesc.contains(e.target) && !listDesc.contains(e.target)) {
+        listDesc.innerHTML = '';
+        listDesc.style.display = 'none';
+    }
+});
+// Validación y botón limpiar
+const form = document.getElementById('busquedaCombinadaForm');
+form.addEventListener('submit', function(e) {
+    const codigo = inputCodigo.value.trim();
+    const desc = inputDesc.value.trim();
+    const errorDiv = document.getElementById('form-error');
+    if (!codigo && !desc) {
+        e.preventDefault();
+        errorDiv.textContent = 'Por favor, ingresa un código o una descripción para buscar.';
+        errorDiv.classList.remove('d-none');
+    } else {
+        errorDiv.classList.add('d-none');
+    }
+});
+document.getElementById('btnLimpiar').addEventListener('click', function() {
+    inputCodigo.value = '';
+    inputDesc.value = '';
+    // Redirige a la URL base sin parámetros para mostrar todos los aranceles
+    window.location.href = window.location.pathname.split('?')[0];
+});
+</script>
+{% endblock %}

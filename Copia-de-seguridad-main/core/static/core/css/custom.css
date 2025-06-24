@@ -1,0 +1,27 @@
+body { background: linear-gradient(135deg, #f4f8fb 60%, #e3e6f3 100%); }
+.card { border-radius: 1.2rem; box-shadow: 0 6px 24px rgba(26,35,126,0.10); }
+.card-header { font-size: 1.2rem; font-weight: 700; letter-spacing: 1px; background: linear-gradient(90deg, #1a237e 60%, #3949ab 100%) !important; color: #fff; }
+.table { font-size: 1.01rem; border-radius: 0.7rem; overflow: hidden; }
+.table thead th { background: #1a237e !important; color: #fff; border: none; }
+.table-striped > tbody > tr:nth-of-type(odd) { background-color: #f0f4fa; }
+.table-bordered td, .table-bordered th { border: 1px solid #dee2e6; }
+.autocomplete-suggestions { border-radius: 0.7rem; box-shadow: 0 8px 32px rgba(26,35,126,0.18); background: #fff; z-index: 9999; border: 1px solid #bdbdbd; padding: 0.3rem 0; }
+.autocomplete-suggestion { font-size: 1rem; background: #fff; color: #1a237e; padding: 0.4rem 1rem; transition: background 0.2s; border-bottom: 1px solid #e3e6f3; }
+.autocomplete-suggestion:last-child { border-bottom: none; }
+.autocomplete-suggestion mark { background: #ffe066; color: #212529; padding: 0; }
+.autocomplete-suggestion.list-group-item-action:hover { background: #e3e6f3; color: #1a237e; }
+.autocomplete-suggestion.list-group-item-warning { background: #fff3cd; color: #856404; }
+.btn-primary { background: linear-gradient(90deg, #1a237e 60%, #3949ab 100%); border: none; }
+.btn-primary:hover { background: #3949ab; }
+.btn-secondary { background: #e3e6f3; color: #1a237e; border: none; }
+.btn-secondary:hover { background: #c5cae9; color: #1a237e; }
+.alert-danger, .alert-warning { border-radius: 0.7rem; }
+.form-control { border-radius: 0.7rem; }
+.table-responsive { border-radius: 0.7rem; overflow: hidden; }
+.table th, .table td { vertical-align: middle !important; text-align: center; }
+.table td:first-child, .table th:first-child { text-align: left; }
+.form-label { font-weight: 500; color: #1a237e; }
+.container.py-4 { max-width: 1200px; }
+.sisarm-title { font-family: 'Montserrat', Arial, sans-serif; font-weight: 700; font-size: 2rem; color: #1a237e; letter-spacing: 2px; text-shadow: 1px 1px 2px #e3e3e3; }
+.navbar-brand img { border-radius: 0.5rem; background: #fff; box-shadow: 0 2px 8px rgba(26,35,126,0.10); }
+@media (max-width: 768px) { .table-responsive { font-size: 0.92rem; } .card-header, .table th { font-size: 1rem; } }

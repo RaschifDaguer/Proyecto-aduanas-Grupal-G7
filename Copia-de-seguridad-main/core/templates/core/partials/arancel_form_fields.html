@@ -1,0 +1,27 @@
+{% csrf_token %}
+<div class="row">
+  <div class="col-md-4">
+    <label for="id_tipo_doc">Tipo de Doc</label>
+    {{ form.tipo_doc }}
+  </div>
+  <div class="col-md-4">
+    <label for="id_entidad_emite">Entidad que emite</label>
+    {{ form.entidad_emite }}
+  </div>
+  <div class="col-md-4">
+    <label for="id_disp_legal">Disp. Legal</label>
+    {{ form.disp_legal }}
+  </div>
+</div>
+{# Renderizar el resto de los campos del formulario, excluyendo los personalizados ya mostrados #}
+{% for field in form.visible_fields %}
+  {% if field.name not in 'tipo_doc entidad_emite disp_legal' %}
+    <div class="mb-3">
+      <label for="id_{{ field.name }}">{{ field.label }}</label>
+      {{ field }}
+      {% if field.help_text %}<small class="form-text text-muted">{{ field.help_text }}</small>{% endif %}
+      {% for error in field.errors %}<div class="text-danger">{{ error }}</div>{% endfor %}
+    </div>
+  {% endif %}
+{% endfor %}
+<div class="alert alert-danger d-none" id="arancel-form-errors"></div>

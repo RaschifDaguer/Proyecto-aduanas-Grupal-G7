@@ -1,0 +1,401 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block content %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+<div class="container py-4 animate__animated animate__fadeIn">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="fw-bold mb-0">Gestión de Aranceles</h2>
+        <div>
+            <button class="btn btn-outline-info me-2" id="add-seccion-btn"><i class="bi bi-plus-circle"></i> Nueva Sección</button>
+            <button class="btn btn-outline-primary me-2" id="add-capitulo-btn"><i class="bi bi-plus-circle"></i> Nuevo Capítulo</button>
+            <button class="btn btn-success shadow-sm" id="add-arancel-btn"><i class="bi bi-plus-circle"></i> Agregar Arancel</button>
+        </div>
+    </div>
+    <!-- Buscador visual sobre la tabla -->
+    <div class="mb-4 position-relative" style="max-width:500px;">
+        <input type="text" id="buscador-aranceles-tabla" class="form-control form-control-lg shadow-sm" placeholder="Buscar arancel por código o descripción...">
+        <div id="sugerencias-aranceles-tabla" class="autocomplete-suggestions" style="max-height: 250px; overflow-y: auto; overflow-x: auto; white-space: nowrap; cursor: pointer;"></div>
+    </div>
+    <div class="d-flex justify-content-center">
+        <div class="table-responsive rounded shadow-sm" style="min-width:1400px; overflow-x:auto;">
+            <table class="table table-hover align-middle mb-0" id="aranceles-table">
+                <thead class="table-dark">
+                    <tr>
+                        <th>Código</th>
+                        <th>Descripción del producto</th>
+                        <th>GA %</th>
+                        <th>ICE-IEHD</th>
+                        <th>Unidad de Medida</th>
+                        <th>Despacho Frontera</th>
+                        <th>Tipo de Doc</th>
+                        <th>Entidad que emite</th>
+                        <th>Disp. Legal</th>
+                        <th>CAN / ACE 36 / ACE 47 / VEN</th>
+                        <th>ACE 22 Chi</th>
+                        <th>ACE 22 Prot</th>
+                        <th>ACE 66, MÉXICO</th>
+                        <th>Editar</th>
+                        <th>Eliminar</th>
+                    </tr>
+                </thead>
+                <tbody id="aranceles-tbody">
+                    {% for arancel in aranceles %}
+                    <tr id="arancel-row-{{ arancel.id }}">
+                        <td>{% if not arancel.arancel_padre %}{{ arancel.codigo|default_if_none:""|default:""|safe }}{% endif %}</td>
+                        <td>{{ arancel.descripcion|default_if_none:""|default:""|safe }}</td>
+                        <td>{% if arancel.ga %}{{ arancel.ga|floatformat:0 }}{% endif %}</td>
+                        <td>{{ arancel.ice|default_if_none:""|default:"" }}</td>
+                        <td>{{ arancel.unidad_medida|default_if_none:""|default:"" }}</td>
+                        <td>{{ arancel.despacho_frontera|default_if_none:""|default:"" }}</td>
+                        <td>{% if arancel.documentos_adicionales %}{{ arancel.documentos_adicionales.tipo_doc|default_if_none:""|default:"" }}{% endif %}</td>
+                        <td>{% if arancel.documentos_adicionales %}{{ arancel.documentos_adicionales.entidad_emite|default_if_none:""|default:"" }}{% endif %}</td>
+                        <td>{% if arancel.documentos_adicionales %}{{ arancel.documentos_adicionales.disp_legal|default_if_none:""|default:"" }}{% endif %}</td>
+                        <td>
+                            {% if arancel.preferencias_arancelarias %}
+                                {% if arancel.preferencias_arancelarias.ace_36 %}{{ arancel.preferencias_arancelarias.ace_36 }}
+                                {% elif arancel.preferencias_arancelarias.can %}{{ arancel.preferencias_arancelarias.can }}
+                                {% elif arancel.preferencias_arancelarias.ace_47 %}{{ arancel.preferencias_arancelarias.ace_47 }}
+                                {% elif arancel.preferencias_arancelarias.ven %}{{ arancel.preferencias_arancelarias.ven }}
+                                {% endif %}
+                            {% endif %}
+                        </td>
+                        <td>{% if arancel.ace22 %}{{ arancel.ace22.chi|default_if_none:"" }}{% endif %}</td>
+                        <td>{% if arancel.ace22 %}{{ arancel.ace22.prot|default_if_none:"" }}{% endif %}</td>
+                        <td>{% if arancel.ace66_mexico %}{{ arancel.ace66_mexico.ace_66_mexico|default_if_none:"" }}{% endif %}</td>
+                        <td>
+                            <button class="btn btn-sm btn-primary edit-arancel" data-id="{{ arancel.id }}">Editar</button>
+                        </td>
+                        <td>
+                            <button class="btn btn-sm btn-danger delete-arancel" data-id="{{ arancel.id }}">Eliminar</button>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="15" class="text-center">No hay aranceles registrados.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+<!-- Modal para Crear/Editar Arancel -->
+<div class="modal fade" id="arancelModal" tabindex="-1" aria-labelledby="arancelModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="arancelModalLabel">Agregar Arancel</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+      </div>
+      <form id="arancel-form">
+        <div class="modal-body">
+          <div id="arancel-form-fields">
+            {# El formulario se cargará dinámicamente #}
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn btn-primary" id="save-arancel-btn">Guardar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+<!-- Modal para Crear/Editar Sección -->
+<div class="modal fade" id="seccionModal" tabindex="-1" aria-labelledby="seccionModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="seccionModalLabel">Agregar Sección</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+      </div>
+      <form id="seccion-form">
+        <div class="modal-body">
+          <div id="seccion-form-fields"></div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn btn-primary" id="save-seccion-btn">Guardar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+<!-- Modal para Crear/Editar Capítulo -->
+<div class="modal fade" id="capituloModal" tabindex="-1" aria-labelledby="capituloModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="capituloModalLabel">Agregar Capítulo</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+      </div>
+      <form id="capitulo-form">
+        <div class="modal-body">
+          <div id="capitulo-form-fields"></div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn btn-primary" id="save-capitulo-btn">Guardar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+// --- Buscador visual sobre la tabla de aranceles ---
+$('#buscador-aranceles-tabla').on('input focus', function() {
+    let q = $(this).val();
+    $.get('/core/ajax/buscar_aranceles/', {q: q}, function(data) {
+        let html = '';
+        if (data.length === 0) {
+            html = '<div class="text-muted px-2 py-1">No hay resultados</div>';
+        } else {
+            data.forEach(function(item) {
+                html += `<div class=\"sugerencia-arancel-tabla\" data-id=\"${item.id}\">${item.texto}</div>`;
+            });
+        }
+        $('#sugerencias-aranceles-tabla').html(html).show();
+    });
+});
+$(document).on('click', '.sugerencia-arancel-tabla', function() {
+    let id = $(this).data('id');
+    // Scroll y resaltado
+    let row = $("#arancel-row-" + id);
+    if (row.length) {
+        $('.table tr').removeClass('table-warning');
+        row.addClass('table-warning');
+        $('html, body').animate({ scrollTop: row.offset().top - 120 }, 500);
+    }
+    $('#sugerencias-aranceles-tabla').empty();
+    $('#buscador-aranceles-tabla').val(row.find('td').eq(0).text() + ' - ' + row.find('td').eq(1).text());
+});
+
+const arancelModalEl = document.getElementById('arancelModal');
+const arancelModal = new bootstrap.Modal(arancelModalEl);
+let editArancelId = null;
+
+// Abrir modal para crear
+$('#add-arancel-btn').on('click', function() {
+    editArancelId = null;
+    $('#arancelModalLabel').text('Agregar Arancel');
+    $('#arancel-form-errors').addClass('d-none').empty();
+    $.get('{% url "arancel_form" %}', function(response) {
+        $('#arancel-form-fields').html(response.html);
+    });
+    arancelModal.show();
+});
+
+// Guardar (crear o editar)
+$('#arancel-form').on('submit', function(e) {
+    e.preventDefault();
+    let url = editArancelId ? `/aranceles/${editArancelId}/edit/` : '{% url "arancel_create" %}';
+    let formData = $(this).serialize();
+    $.post(url, formData)
+        .done(function(response) {
+            if (response.success) {
+                if (editArancelId) {
+                    $(`#arancel-row-${editArancelId}`).replaceWith(response.html);
+                } else {
+                    $('#aranceles-tbody').append(response.html);
+                }
+                arancelModal.hide();
+                showMessage(response.message || 'Operación exitosa', 'success');
+            } else {
+                $('#arancel-form-errors').removeClass('d-none').html(response.errors.join('<br>'));
+                showMessage('Error: ' + response.errors.join(' | '), 'danger');
+            }
+        })
+        .fail(function(xhr) {
+            $('#arancel-form-errors').removeClass('d-none').text('Error inesperado. Intenta nuevamente.');
+            showMessage('Error inesperado. Intenta nuevamente.', 'danger');
+        })
+        .always(function() {
+            setTimeout(function() {
+                $('.modal-backdrop').remove();
+                $('body').removeClass('modal-open');
+            }, 500);
+        });
+});
+
+// Editar arancel
+$('#aranceles-tbody').on('click', '.edit-arancel', function() {
+    editArancelId = $(this).data('id');
+    $('#arancelModalLabel').text('Editar Arancel');
+    $('#arancel-form-errors').addClass('d-none').empty();
+    $.get(`/aranceles/${editArancelId}/form/`, function(response) {
+        $('#arancel-form-fields').html(response.html);
+        arancelModal.show();
+    });
+});
+
+// Eliminar arancel
+$('#aranceles-tbody').on('click', '.delete-arancel', function() {
+    const arancelId = $(this).data('id');
+    if (confirm('¿Seguro que deseas eliminar este arancel?')) {
+        $.post(`/aranceles/${arancelId}/delete/`, {'csrfmiddlewaretoken': $('input[name="csrfmiddlewaretoken"]').val()}, function(response) {
+            if (response.success) {
+                $(`#arancel-row-${arancelId}`).remove();
+                showMessage('Arancel eliminado correctamente.', 'success');
+            }
+        });
+    }
+});
+
+// --- Sección ---
+
+const seccionModalEl = document.getElementById('seccionModal');
+const seccionModal = new bootstrap.Modal(seccionModalEl);
+let editSeccionId = null;
+
+// Abrir modal para crear sección
+$('#add-seccion-btn').on('click', function() {
+    editSeccionId = null;
+    $('#seccionModalLabel').text('Agregar Sección');
+    $('#seccion-form-errors').addClass('d-none').empty();
+    $.get('{% url "ajax_form_seccion" %}', function(response) {
+        $('#seccion-form-fields').html(response.html);
+    });
+    seccionModal.show();
+});
+
+// Guardar (crear o editar sección)
+$('#seccion-form').on('submit', function(e) {
+    e.preventDefault();
+    let url = editSeccionId ? `/secciones/${editSeccionId}/edit/` : '{% url "ajax_form_seccion" %}';
+    let formData = $(this).serialize();
+    $.post(url, formData)
+        .done(function(response) {
+            if (response.success) {
+                if (editSeccionId) {
+                    // Actualizar fila de sección en la tabla
+                    $(`#seccion-row-${editSeccionId}`).replaceWith(response.html);
+                } else {
+                    // Agregar nueva sección a la tabla
+                    $('#secciones-tbody').append(response.html);
+                }
+                seccionModal.hide();
+                showMessage(response.message || 'Operación exitosa', 'success');
+            } else {
+                $('#seccion-form-errors').removeClass('d-none').html(response.errors.join('<br>'));
+                showMessage('Error: ' + response.errors.join(' | '), 'danger');
+            }
+        })
+        .fail(function(xhr) {
+            $('#seccion-form-errors').removeClass('d-none').text('Error inesperado. Intenta nuevamente.');
+            showMessage('Error inesperado. Intenta nuevamente.', 'danger');
+        })
+        .always(function() {
+            setTimeout(function() {
+                $('.modal-backdrop').remove();
+                $('body').removeClass('modal-open');
+            }, 500);
+        });
+});
+
+// Editar sección
+$('#secciones-tbody').on('click', '.edit-seccion', function() {
+    editSeccionId = $(this).data('id');
+    $('#seccionModalLabel').text('Editar Sección');
+    $('#seccion-form-errors').addClass('d-none').empty();
+    $.get(`/secciones/${editSeccionId}/form/`, function(response) {
+        $('#seccion-form-fields').html(response.html);
+        seccionModal.show();
+    });
+});
+
+// Eliminar sección
+$('#secciones-tbody').on('click', '.delete-seccion', function() {
+    const seccionId = $(this).data('id');
+    if (confirm('¿Seguro que deseas eliminar esta sección?')) {
+        $.post(`/secciones/${seccionId}/delete/`, {'csrfmiddlewaretoken': $('input[name="csrfmiddlewaretoken"]').val()}, function(response) {
+            if (response.success) {
+                $(`#seccion-row-${seccionId}`).remove();
+                showMessage('Sección eliminada correctamente.', 'success');
+            }
+        });
+    }
+});
+
+// --- Capítulo ---
+
+const capituloModalEl = document.getElementById('capituloModal');
+const capituloModal = new bootstrap.Modal(capituloModalEl);
+let editCapituloId = null;
+
+// Abrir modal para crear capítulo
+$('#add-capitulo-btn').on('click', function() {
+    editCapituloId = null;
+    $('#capituloModalLabel').text('Agregar Capítulo');
+    $('#capitulo-form-errors').addClass('d-none').empty();
+    $.get('{% url "ajax_form_capitulo" %}', function(response) {
+        $('#capitulo-form-fields').html(response.html);
+    });
+    capituloModal.show();
+});
+
+// Guardar (crear o editar capítulo)
+$('#capitulo-form').on('submit', function(e) {
+    e.preventDefault();
+    let url = editCapituloId ? `/capitulos/${editCapituloId}/edit/` : '{% url "ajax_form_capitulo" %}';
+    let formData = $(this).serialize();
+    $.post(url, formData)
+        .done(function(response) {
+            if (response.success) {
+                if (editCapituloId) {
+                    // Actualizar fila de capítulo en la tabla
+                    $(`#capitulo-row-${editCapituloId}`).replaceWith(response.html);
+                } else {
+                    // Agregar nuevo capítulo a la tabla
+                    $('#capitulos-tbody').append(response.html);
+                }
+                capituloModal.hide();
+                showMessage(response.message || 'Operación exitosa', 'success');
+            } else {
+                $('#capitulo-form-errors').removeClass('d-none').html(response.errors.join('<br>'));
+                showMessage('Error: ' + response.errors.join(' | '), 'danger');
+            }
+        })
+        .fail(function(xhr) {
+            $('#capitulo-form-errors').removeClass('d-none').text('Error inesperado. Intenta nuevamente.');
+            showMessage('Error inesperado. Intenta nuevamente.', 'danger');
+        })
+        .always(function() {
+            setTimeout(function() {
+                $('.modal-backdrop').remove();
+                $('body').removeClass('modal-open');
+            }, 500);
+        });
+});
+
+// Editar capítulo
+$('#capitulos-tbody').on('click', '.edit-capitulo', function() {
+    editCapituloId = $(this).data('id');
+    $('#capituloModalLabel').text('Editar Capítulo');
+    $('#capitulo-form-errors').addClass('d-none').empty();
+    $.get(`/capitulos/${editCapituloId}/form/`, function(response) {
+        $('#capitulo-form-fields').html(response.html);
+        capituloModal.show();
+    });
+});
+
+// Eliminar capítulo
+$('#capitulos-tbody').on('click', '.delete-capitulo', function() {
+    const capituloId = $(this).data('id');
+    if (confirm('¿Seguro que deseas eliminar este capítulo?')) {
+        $.post(`/capitulos/${capituloId}/delete/`, {'csrfmiddlewaretoken': $('input[name="csrfmiddlewaretoken"]').val()}, function(response) {
+            if (response.success) {
+                $(`#capitulo-row-${capituloId}`).remove();
+                showMessage('Capítulo eliminado correctamente.', 'success');
+            }
+        });
+    }
+});
+
+function showMessage(msg, type) {
+    let alert = $(`<div class="alert alert-${type} alert-dismissible fade show mt-3" role="alert">${msg}<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button></div>`);
+    $('.container').prepend(alert);
+    setTimeout(() => { alert.alert('close'); }, 4000);
+}
+</script>
+{% endblock %}

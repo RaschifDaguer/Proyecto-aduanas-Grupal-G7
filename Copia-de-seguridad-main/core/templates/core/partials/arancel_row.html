@@ -1,0 +1,29 @@
+<tr id="arancel-row-{{ arancel.id }}">
+    <td>{% if not arancel.arancel_padre %}{{ arancel.codigo|default_if_none:""|default:""|safe }}{% endif %}</td>
+    <td>{{ arancel.descripcion|default_if_none:""|default:""|safe }}</td>
+    <td>{% if arancel.ga %}{{ arancel.ga|floatformat:0 }}{% endif %}</td>
+    <td>{{ arancel.ice|default_if_none:""|default:"" }}</td>
+    <td>{{ arancel.unidad_medida|default_if_none:""|default:"" }}</td>
+    <td>{{ arancel.despacho_frontera|default_if_none:""|default:"" }}</td>
+    <td>{% if arancel.documentos_adicionales %}{{ arancel.documentos_adicionales.tipo_doc|default_if_none:""|default:"" }}{% endif %}</td>
+    <td>{% if arancel.documentos_adicionales %}{{ arancel.documentos_adicionales.entidad_emite|default_if_none:""|default:"" }}{% endif %}</td>
+    <td>{% if arancel.documentos_adicionales %}{{ arancel.documentos_adicionales.disp_legal|default_if_none:""|default:"" }}{% endif %}</td>
+    <td>
+        {% if arancel.preferencias_arancelarias %}
+            {% if arancel.preferencias_arancelarias.ace_36 %}{{ arancel.preferencias_arancelarias.ace_36 }}
+            {% elif arancel.preferencias_arancelarias.can %}{{ arancel.preferencias_arancelarias.can }}
+            {% elif arancel.preferencias_arancelarias.ace_47 %}{{ arancel.preferencias_arancelarias.ace_47 }}
+            {% elif arancel.preferencias_arancelarias.ven %}{{ arancel.preferencias_arancelarias.ven }}
+            {% endif %}
+        {% endif %}
+    </td>
+    <td>{% if arancel.ace22 %}{{ arancel.ace22.chi|default_if_none:"" }}{% endif %}</td>
+    <td>{% if arancel.ace22 %}{{ arancel.ace22.prot|default_if_none:"" }}{% endif %}</td>
+    <td>{% if arancel.ace66_mexico %}{{ arancel.ace66_mexico.ace_66_mexico|default_if_none:"" }}{% endif %}</td>
+    <td>
+        <button class="btn btn-sm btn-primary edit-arancel" data-id="{{ arancel.id }}">Editar</button>
+    </td>
+    <td>
+        <button class="btn btn-sm btn-danger delete-arancel" data-id="{{ arancel.id }}">Eliminar</button>
+    </td>
+</tr>

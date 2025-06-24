@@ -1,0 +1,72 @@
+{% regroup aranceles by capituloaranc.seccion as secciones_grouped %}
+{% for seccion_group in secciones_grouped %}
+<div class="card shadow mb-4">
+    <div class="card-header bg-info text-white">
+        <h4 class="mb-0">Sección {{ seccion_group.grouper.titulo }}: {{ seccion_group.grouper.descripcion }}</h4>
+    </div>
+    <div class="card-body">
+        {% regroup seccion_group.list by capituloaranc as capitulos_grouped %}
+        {% for capitulo_group in capitulos_grouped %}
+            <div class="card mb-3 border-primary">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">Capítulo {% if capitulo_group.grouper.titulo|length == 1 %}0{{ capitulo_group.grouper.titulo }}{% else %}{{ capitulo_group.grouper.titulo }}{% endif %}: {{ capitulo_group.grouper.descripcion }}</h5>
+                </div>
+                <div class="card-body">
+                    {% if capitulo_group.grouper.nota %}
+                        <p><strong>Nota:</strong> {{ capitulo_group.grouper.nota_html|safe }}</p>
+                    {% endif %}
+                    <div class="table-responsive">
+                        <table class="table table-striped table-bordered mb-0">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th>Código</th>
+                                    <th>Descripción</th>
+                                    <th>GA</th>
+                                    <th>ICE</th>
+                                    <th>Unidad de Medida</th>
+                                    <th>Despacho Frontera</th>
+                                    <th>Documento Adicional</th>
+                                    <th>Preferencia Arancelaria</th>
+                                    <th>ACE 22 Chi</th>
+                                    <th>ACE 22 Prot</th>
+                                    <th>ACE 66, MÉXICO</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for arancel in capitulo_group.list %}
+                                <tr>
+                                    <td>{{ arancel.codigo|default_if_none:""|default:""|safe }}</td>
+                                    <td>{{ arancel.descripcion|default_if_none:""|default:""|safe }}</td>
+                                    <td>{% if arancel.ga %}{{ arancel.ga|floatformat:0 }}{% endif %}</td>
+                                    <td>{{ arancel.ice|default_if_none:""|default:"" }}</td>
+                                    <td>{{ arancel.unidad_medida|default_if_none:""|default:"" }}</td>
+                                    <td>{{ arancel.despacho_frontera|default_if_none:""|default:"" }}</td>
+                                    <td>{% if arancel.documentos_adicionales %}{{ arancel.documentos_adicionales.tipo_doc|default_if_none:""|default:"" }}{% endif %}</td>
+                                    <td>
+                                        {% if arancel.preferencias_arancelarias %}
+                                            {% if arancel.preferencias_arancelarias.can %}{{ arancel.preferencias_arancelarias.can }}
+                                            {% elif arancel.preferencias_arancelarias.ace_36 %}{{ arancel.preferencias_arancelarias.ace_36 }}
+                                            {% elif arancel.preferencias_arancelarias.ace_47 %}{{ arancel.preferencias_arancelarias.ace_47 }}
+                                            {% elif arancel.preferencias_arancelarias.ven %}{{ arancel.preferencias_arancelarias.ven }}
+                                            {% endif %}
+                                        {% endif %}
+                                    </td>
+                                    <td>{% if arancel.ace22 %}{{ arancel.ace22.chi|default_if_none:"" }}{% endif %}</td>
+                                    <td>{% if arancel.ace22 %}{{ arancel.ace22.prot|default_if_none:"" }}{% endif %}</td>
+                                    <td>{% if arancel.ace66_mexico %}{{ arancel.ace66_mexico.ace_66_mexico|default_if_none:"" }}{% endif %}</td>
+                                    <td>
+                                        <button class="btn btn-sm btn-primary edit-arancel" data-id="{{ arancel.id }}">Editar</button>
+                                        <button class="btn btn-sm btn-danger delete-arancel" data-id="{{ arancel.id }}">Eliminar</button>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+</div>
+{% endfor %}
