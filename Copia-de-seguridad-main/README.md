@@ -1,5 +1,7 @@
 # SCAM - Sistema de Clasificación Arancelaria y Monitoreo
 
+**Repositorio:** https://github.com/RaschifDaguer/Proyecto-aduanas-Grupal-G7
+
 **Autores:** Raschif Daguer y Matthew Zambrana
 
 ---
@@ -68,7 +70,7 @@ Copia-de-seguridad-main/
 
 1. **Clona el repositorio y navega a la carpeta principal:**
    ```bash
-   git clone <url-del-repo>
+   git clone https://github.com/RaschifDaguer/Proyecto-aduanas-Grupal-G7.git
    cd Copia-de-seguridad-main
    ```
 
